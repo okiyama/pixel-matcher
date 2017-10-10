@@ -11,7 +11,7 @@ h = im.size[1]
 
 resultantImageFlat = []
 
-distanceThreshold = 200
+distanceThreshold = 500
 close = 0
 total = 0
 for file in childFiles:
