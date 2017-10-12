@@ -6,18 +6,24 @@ import sys
 
 def main():
 	childFolder = "./images"
-	im = Image.open("./BoYT0qQ8.jpg")
-	distanceThreshold = int(sys.argv[1]) if len(sys.argv) > 1 else 75
+	outputFolder = "./girl/"
+	im = Image.open("./ff26454c6a2a626a12085b3b6c61e96d--dry-skin-your-skin.jpg")
 
-	imageCompare(distanceThreshold, im, childFolder, "./output/out.bmp")
+	if len(sys.argv) > 1:
+		imageCompare(int(sys.argv[1]), im, childFolder, outputFolder + "outCustom" + sys.argv[1] + ".png", False, True)
+	else:
+		for i in range(1,300):
+			imageCompare(i, im, childFolder, outputFolder + "out" + str(i) + ".png", True)
 
 
-def imageCompare(distanceThreshold, parentImage, childFolder, outputFileName = None):
+def imageCompare(distanceThreshold, parentImage, childFolder, outputFileName = None, maxDistance = False, minDistance = False):
 	childFiles = [f for f in listdir(childFolder) if isfile(join(childFolder, f))]
 	w = parentImage.size[0]
 	h = parentImage.size[1]
 
 	finalImage = np.zeros((w, h, 3), dtype=np.uint8)
+	maxDistances = np.zeros((w, h, 1), dtype=np.uint8)
+	minDistances = np.full((w, h, 1), 999999999, dtype=np.uint8)
 
 	close = 0
 	total = 0
@@ -32,7 +38,11 @@ def imageCompare(distanceThreshold, parentImage, childFolder, outputFileName = N
 				childPixel = np.array(next(childIterator))
 				dist = np.linalg.norm(pixel-childPixel)
 
-				if dist < distanceThreshold:
+				if dist < distanceThreshold or (maxDistance and dist > maxDistances[row][col]) or (minDistance and dist < minDistances[row][col]):
+					if(maxDistance):
+						maxDistances[row][col] = dist
+					if minDistance:
+						minDistances[row][col] = dist
 					close += 1
 					finalImage[row][col] = childPixel
 				total += 1
