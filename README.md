@@ -17,3 +17,4 @@ TODO:
  * Automatically resize child images to match parent
  * Use HSV values instead, could give interesting effects from the color wheel
  * Performance improvements, it's still really slow
+ * Paralellization would work well
