@@ -10,12 +10,8 @@ import subprocess
 import time
 import shutil
 
-#TODO:  Pass in parentImage to compare functions
-#		Make gif automatically
-#		
 
 class PixelMatcher:
-	#if parentFolder is defined, then we loop through the given folder rather than just doing the one parentImage
 	def __init__(self, childFolder, parentImagePath, customDiffThreshold=None):
 		self.parentImage = Image.open(parentImagePath)
 		self.childImages = [Image.open(join(childFolder, f)) for f in listdir(childFolder) if os.path.isfile(join(childFolder, f))]
@@ -23,25 +19,6 @@ class PixelMatcher:
 		self.imageWidth = self.parentImage.size[0]
 		self.imageHeight = self.parentImage.size[1]
 		self.diffMap = self.initDiffMap()
-
-		# #TODO, this should just be a function call to writeComparedImage
-		# #Probably should always pass in parent folder honestly
-		# if customDiffThreshold is not None:
-		# 	self.imageCompare(im, childFolder, outputFolder + "outCustom" + sys.argv[1] + ".png", True)
-		# else:
-		# 	folderCount = 0
-		# 	#TODO move this logic into an init method so self.parentFiles is actual Image objects
-		# 	for file in self.parentImages:
-		# 		folderCount += 1
-		# 		parentFilePath = join(parentFolder, file)
-		# 		im = Image.open(parentFilePath)
-		# 		outputFolderPath = join(outputFolder, str(folderCount)) 
-
-		# 		if not os.path.exists(outputFolderPath):
-	 #  				os.makedirs(outputFolderPath)
-
-		# 		for i in range(1, loops, stepSize):
-		# 			self.imageCompare(i, im, childFolder, outputFolderPath + "/out" + format(i, '05') + ".png", True)
 
 	def initDiffMap(self):
 		diffMap = {}
@@ -63,6 +40,8 @@ class PixelMatcher:
 		if(text.lower() == "y"):
 			shutil.rmtree(outputFolder)
 			os.makedirs(outputFolder)
+		else:
+			sys.exit()
 
 
 	def makeCompareGif(self, outputFolder, maxMin="max", loops=300, stepSize=1, gifOutputFolder="./gifs"):
@@ -83,11 +62,11 @@ class PixelMatcher:
 		gifOutputFile = gifFolder + "/animation" + str(int(time.time())) + ".gif"
 		open(gifOutputFile, "w")
 		os.path.dirname(os.path.realpath(__file__))
-		subprocess.call("convert -delay 0 -loop 0 " + pngFolder + "*.png " + gifOutputFile, shell=True)
+		subprocess.call("convert -layers OptimizePlus -coalesce -duplicate 1,-2-1 -delay 0 -loop 0 " + pngFolder + "*.png " + gifOutputFile, shell=True)
 
 	def maxCompareImage(self, distanceThreshold, outputFileName):
 		finalImage = np.zeros((self.imageWidth, self.imageHeight, 3), dtype=np.uint8)
-		maxDistances = np.zeros((self.imageWidth, self.imageHeight, 1), dtype=np.uint8)
+		maxDistances = np.zeros((self.imageWidth, self.imageHeight, 1), dtype=np.uint16)
 
 		close = 0
 		total = 0
@@ -113,7 +92,7 @@ class PixelMatcher:
 
 	def minCompareImage(self, distanceThreshold, outputFileName):
 		finalImage = np.zeros((self.imageWidth, self.imageHeight, 3), dtype=np.uint8)
-		minDistances = np.full((self.imageWidth, self.imageHeight, 1), 999999999, dtype=np.uint8)
+		minDistances = np.full((self.imageWidth, self.imageHeight, 1), 9999999, dtype=np.uint16)
 
 		close = 0
 		total = 0
@@ -140,7 +119,7 @@ class PixelMatcher:
 		return math.sqrt( ((t1[0] - t2[0])**2) + ((t1[1] - t2[1])**2) + ((t1[2] - t2[2])**2) )
 
 
-#argv parsing here
+#Note: 441.673 is the max distance between two pixels
 def main():
 	customDiffThreshold = None
 	if len(sys.argv) > 1:
@@ -152,8 +131,8 @@ def main():
 	parentImagePath = "./parents/abstract-colorsdd5a-turquoise-sq.jpg"
 	matcher = PixelMatcher(childFolder, parentImagePath, customDiffThreshold=customDiffThreshold)
 
-	# matcher.maxCompareImage(150, outputFolder + "outTest.png")
-	matcher.makeCompareGif(outputFolder, loops=10, maxMin="min")
+	# matcher.minCompareImage(1000, outputFolder + "outTest.png")
+	matcher.makeCompareGif(outputFolder, loops=400, maxMin="max")
 
 if __name__ == "__main__":
 	main()
