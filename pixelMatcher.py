@@ -68,56 +68,45 @@ class PixelMatcher:
 		os.path.dirname(os.path.realpath(__file__))
 		subprocess.call("convert -layers OptimizePlus -coalesce -duplicate 1,-2-1 -delay 0 -loop 0 " + pngFolder + "*.png " + gifOutputFile, shell=True)
 
-	def maxCompareImage(self, distanceThreshold, outputFileName):
+	def compareImage(self, distanceThreshold, outputFileName, distancesArray, eligiblityFunction):
 		finalImage = np.zeros((self.imageWidth, self.imageHeight, 3), dtype=np.uint8)
+
+		close = 0
+		total = 0
+		for childImage in self.childImages:
+			childIterator = iter(childImage.getdata())
+			parentIterator = iter(self.parentImage.getdata())
+
+			for row in range(self.imageWidth):
+				for col in range(self.imageHeight):
+					childPixel = next(childIterator)
+					dist = self.diffMap[childImage.filename][row][col]
+
+					if eligiblityFunction(dist, distanceThreshold, distancesArray, row, col):
+						distancesArray[row][col] = dist
+						close += 1
+						finalImage[row][col] = childPixel
+					total += 1
+
+		print("close: " + str(close) + ", total: " + str(total) + " percent: " + str(float(close)/float(total) * 100))
+
+		Image.fromarray(finalImage, 'RGB').save(outputFileName)
+
+	def maxElibilityFunction(self, distance, distanceThreshold, maxDistances, row, col):
+		return distance < distanceThreshold and distance > maxDistances[row][col]
+
+	def maxCompareImage(self, distanceThreshold, outputFileName):
 		maxDistances = np.zeros((self.imageWidth, self.imageHeight, 1), dtype=np.uint16)
 
-		close = 0
-		total = 0
-		for childImage in self.childImages:
-			childIterator = iter(childImage.getdata())
-			parentIterator = iter(self.parentImage.getdata())
-
-			for row in range(self.imageWidth):
-				for col in range(self.imageHeight):
-					childPixel = next(childIterator)
-					dist = self.diffMap[childImage.filename][row][col]
-
-					if dist < distanceThreshold and dist > maxDistances[row][col]:
-						maxDistances[row][col] = dist
-						close += 1
-						finalImage[row][col] = childPixel
-					total += 1
-
-		print("close: " + str(close) + ", total: " + str(total) + " percent: " + str(float(close)/float(total) * 100))
-
-		Image.fromarray(finalImage, 'RGB').save(outputFileName)
+		return self.compareImage(distanceThreshold, outputFileName, maxDistances, self.maxElibilityFunction)
 		
+	def minEligibilityFunction(self, distance, distanceThreshold, minDistances, row, col):
+		return distance < distanceThreshold and distance < minDistances[row][col]
 
 	def minCompareImage(self, distanceThreshold, outputFileName):
-		finalImage = np.zeros((self.imageWidth, self.imageHeight, 3), dtype=np.uint8)
 		minDistances = np.full((self.imageWidth, self.imageHeight, 1), 9999999, dtype=np.uint16)
-
-		close = 0
-		total = 0
-		for childImage in self.childImages:
-			childIterator = iter(childImage.getdata())
-			parentIterator = iter(self.parentImage.getdata())
-
-			for row in range(self.imageWidth):
-				for col in range(self.imageHeight):
-					childPixel = next(childIterator)
-					dist = self.diffMap[childImage.filename][row][col]
-
-					if dist < distanceThreshold and dist < minDistances[row][col]:
-						minDistances[row][col] = dist
-						close += 1
-						finalImage[row][col] = childPixel
-					total += 1
-
-		print("close: " + str(close) + ", total: " + str(total) + " percent: " + str(float(close)/float(total) * 100))
-
-		Image.fromarray(finalImage, 'RGB').save(outputFileName)
+	
+		return self.compareImage(distanceThreshold, outputFileName, minDistances, self.minElibilityFunction)
 
 	def distance(self, t1, t2):
 		return math.sqrt( ((t1[0] - t2[0])**2) + ((t1[1] - t2[1])**2) + ((t1[2] - t2[2])**2) )
@@ -136,8 +125,8 @@ def main():
 	matcher = PixelMatcher(childFolder, parentImagePath, customDiffThreshold=customDiffThreshold)
 
 	# matcher.minCompareImage(1000, outputFolder + "outTest.png")
-	# matcher.makeCompareGif(outputFolder, loops=20, maxMin="max")
-	matcher.maxCompareImage(100, "")
+	matcher.makeCompareGif(outputFolder, loops=20, maxMin="max")
+	# matcher.maxCompareImage(100, "")
 
 if __name__ == "__main__":
 	main()
