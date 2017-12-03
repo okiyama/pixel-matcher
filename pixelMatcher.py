@@ -125,7 +125,7 @@ def main():
 	matcher = PixelMatcher(childFolder, parentImagePath, customDiffThreshold=customDiffThreshold)
 
 	# matcher.minCompareImage(1000, outputFolder + "outTest.png")
-	matcher.makeCompareGif(outputFolder, loops=20, maxMin="max")
+	matcher.makeCompareGif(outputFolder, loops=20, maxMin="max", )
 	# matcher.maxCompareImage(100, "")
 
 if __name__ == "__main__":
