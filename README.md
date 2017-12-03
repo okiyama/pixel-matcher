@@ -17,4 +17,6 @@ TODO:
  * Automatically resize child images to match parent
  * Use HSV values instead, could give interesting effects from the color wheel
  * Performance improvements, it's still really slow
- * Paralellization would work well
+ * Paralellization would work well. Would need to break up into discrete processes that can be called with command line parameters. This honestly would improve the quality of the program though
+ * For GIF creation, track created files and delete after the run is done. Safer than just deleting the output folder.
+ * Save to .gifv rather than .gif
