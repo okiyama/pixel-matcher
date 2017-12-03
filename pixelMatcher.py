@@ -16,7 +16,12 @@ import multiprocessing
 class PixelMatcher:
 	def __init__(self, childFolder, parentImagePath, customDiffThreshold=None):
 		self.parentImage = Image.open(parentImagePath)
+		self.parentImageData = np.asarray(self.parentImage)
+		print(self.parentImageData)
+
 		self.childImages = [Image.open(join(childFolder, f)) for f in listdir(childFolder) if os.path.isfile(join(childFolder, f))]
+		self.childImageData = [np.asarray(c) for c in self.childImages]
+
 		self.customDiffThreshold = customDiffThreshold
 		self.imageWidth = self.parentImage.size[0]
 		self.imageHeight = self.parentImage.size[1]
@@ -24,15 +29,16 @@ class PixelMatcher:
 
 	def initDiffMap(self):
 		diffMap = {}
-		parentList = list(self.parentImage.getdata())
-		for childImage in self.childImages:
+		for i in range(len(self.childImages)):
+			childImage = self.childImages[i]
+			childImageData = self.childImageData[i]
+
 			diffMap[childImage.filename] = np.zeros((self.imageWidth, self.imageHeight, 1), dtype=np.uint8)
-			childList = list(childImage.getdata())
 
 			for row in range(self.imageWidth):
 				for col in range(self.imageHeight):
-					pixel = parentList[row*col + col]
-					childPixel = childList[row*col + col]
+					pixel = self.parentImageData[row][col]
+					childPixel = childImageData[row][col]
 					diffMap[childImage.filename][row][col] = self.distance(pixel, childPixel)
 
 		return diffMap
@@ -73,13 +79,15 @@ class PixelMatcher:
 
 		close = 0
 		total = 0
-		for childImage in self.childImages:
+		for i in range(len(self.childImages)):
+			childImage = self.childImages[i]
+			childImageData = self.childImageData[i]
+
 			childIterator = iter(childImage.getdata())
-			parentIterator = iter(self.parentImage.getdata())
 
 			for row in range(self.imageWidth):
 				for col in range(self.imageHeight):
-					childPixel = next(childIterator)
+					childPixel = childImageData[row][col]
 					dist = self.diffMap[childImage.filename][row][col]
 
 					if eligiblityFunction(dist, distanceThreshold, distancesArray, row, col):
