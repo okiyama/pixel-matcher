@@ -9,6 +9,8 @@ import math
 import subprocess
 import time
 import shutil
+# from joblib import Parallel, delayed
+import multiprocessing
 
 
 class PixelMatcher:
@@ -22,15 +24,15 @@ class PixelMatcher:
 
 	def initDiffMap(self):
 		diffMap = {}
+		parentList = list(self.parentImage.getdata())
 		for childImage in self.childImages:
 			diffMap[childImage.filename] = np.zeros((self.imageWidth, self.imageHeight, 1), dtype=np.uint8)
-			childIterator = iter(childImage.getdata())
-			parentIterator = iter(self.parentImage.getdata())
+			childList = list(childImage.getdata())
 
 			for row in range(self.imageWidth):
 				for col in range(self.imageHeight):
-					pixel = next(parentIterator)
-					childPixel = next(childIterator)
+					pixel = parentList[row*col + col]
+					childPixel = childList[row*col + col]
 					diffMap[childImage.filename][row][col] = self.distance(pixel, childPixel)
 
 		return diffMap
@@ -46,6 +48,8 @@ class PixelMatcher:
 
 	def makeCompareGif(self, outputFolder, maxMin="max", loops=300, stepSize=1, gifOutputFolder="./gifs"):
 		self.clearOutputFolder(outputFolder)
+
+		num_cores = multiprocessing.cpu_count()
 
 		for i in range(1, loops, stepSize):
 			outputFileName = outputFolder + "/" + maxMin + "out" + format(i, '05') + ".png"
@@ -128,11 +132,12 @@ def main():
 	# parentFolder = "./parents/"
 	childFolder = "./abstract/"
 	outputFolder = "./output/"
-	parentImagePath = "./parents/abstract-colorsdd5a-turquoise-sq.jpg"
+	parentImagePath = "./parents/abstract-colorsdd3a-marilyn-sq.jpg"
 	matcher = PixelMatcher(childFolder, parentImagePath, customDiffThreshold=customDiffThreshold)
 
 	# matcher.minCompareImage(1000, outputFolder + "outTest.png")
-	matcher.makeCompareGif(outputFolder, loops=400, maxMin="max")
+	# matcher.makeCompareGif(outputFolder, loops=20, maxMin="max")
+	matcher.maxCompareImage(100, "")
 
 if __name__ == "__main__":
 	main()
