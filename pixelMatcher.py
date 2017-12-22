@@ -31,7 +31,7 @@ class PixelMatcher:
 			childImage = self.childImages[i]
 			childImageData = self.childImageData[i]
 
-			diffMap[childImage.filename] = np.zeros((self.imageWidth, self.imageHeight, 1), dtype=np.uint8)
+			diffMap[childImage.filename] = np.zeros((self.imageWidth, self.imageHeight, 1), dtype=np.float64)
 
 			for row in range(self.imageWidth):
 				for col in range(self.imageHeight):
@@ -83,8 +83,7 @@ class PixelMatcher:
 		gifOutputFile = gifFolder + "/animation" + str(int(time.time())) + ".mp4"
 		os.path.dirname(os.path.realpath(__file__))
 		shellCall = 'ffmpeg -r 30 -f image2 -s 1920x1080 -i ' + pngFolder + 'out%05d.png -vcodec libx264 -crf 25 ' + \
-			'-pix_fmt yuv420p -filter_complex "[0]reverse[r];[0][r]concat,loop=5:250,setpts=N/25/TB" ' + gifOutputFile
-		print(shellCall)
+			'-pix_fmt yuv420p -filter_complex "[0]reverse[r];[0][r]concat,loop=0:250,setpts=N/30/TB" ' + gifOutputFile
 		subprocess.call(shellCall, shell=True)
 
 	def compareImage(self, distanceThreshold, outputFileName, distancesArray, eligiblityFunction):
@@ -110,6 +109,7 @@ class PixelMatcher:
 						finalImage[row][col] = childPixel
 					# total += 1
 
+		# print("max of max: " + str(max(distancesArray.flatten('F').tolist())))
 		# print("close: " + str(close) + ", total: " + str(total) + " percent: " + str(float(close)/float(total) * 100))
 
 		Image.fromarray(finalImage, 'RGB').save(outputFileName)
@@ -118,7 +118,7 @@ class PixelMatcher:
 		return distance < distanceThreshold and distance > maxDistances[row][col]
 
 	def maxCompareImage(self, distanceThreshold, outputFileName):
-		maxDistances = np.zeros((self.imageWidth, self.imageHeight, 1), dtype=np.uint16)
+		maxDistances = np.zeros((self.imageWidth, self.imageHeight, 1), dtype=np.float64)
 
 		return self.compareImage(distanceThreshold, outputFileName, maxDistances, self.maxEligibilityFunction)
 		
@@ -126,7 +126,7 @@ class PixelMatcher:
 		return distance < distanceThreshold and distance < minDistances[row][col]
 
 	def minCompareImage(self, distanceThreshold, outputFileName):
-		minDistances = np.full((self.imageWidth, self.imageHeight, 1), 9999999, dtype=np.uint16)
+		minDistances = np.full((self.imageWidth, self.imageHeight, 1), 9999999, dtype=np.float64)
 	
 		return self.compareImage(distanceThreshold, outputFileName, minDistances, self.minEligibilityFunction)
 
@@ -141,9 +141,9 @@ def main():
 		customDiffThreshold = int(sys.argv[1])
 
 	# parentFolder = "./parents/"
-	childFolder = "./testChildren/"
+	childFolder = "./perlerterks/"
 	outputFolder = "./output/"
-	parentImagePath = "./white.png"
+	parentImagePath = "./barack-obama.jpg"
 	matcher = PixelMatcher(childFolder, parentImagePath, customDiffThreshold=customDiffThreshold)
 
 	# matcher.minCompareImage(1000, outputFolder + "outTest.png")
