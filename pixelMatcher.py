@@ -49,12 +49,12 @@ class PixelMatcher:
 		else:
 			sys.exit()
 
-
 	def makeCompareGif(self, outputFolder, maxMin="max", loops=300, stepSize=1, gifOutputFolder="./gifs", mp4Gif="mp4"):
 		self.clearOutputFolder(outputFolder)
+		self.ensureWidthDivisibleByTwo(mp4Gif)
 
 		for i in range(1, loops, stepSize):
-			outputFileName = outputFolder + "/" + maxMin + "out" + format(i, '05') + ".png"
+			outputFileName = outputFolder + "/" + "out" + format(i, '05') + ".png"
 			if maxMin == "max":
 				self.maxCompareImage(i, outputFileName)
 			elif maxMin == "min":
@@ -62,17 +62,34 @@ class PixelMatcher:
 			else:
 				raise ValueError()
 
-		self.makeGifOrMp4(outputFolder, gifOutputFolder, mp4Gif)
+		if(mp4Gif == "gif"):
+			self.makeGif(outputFolder, gifOutputFolder)
+		else:
+			self.makeMp4(outputFolder, gifOutputFolder)
 
-	def makeGifOrMp4(self, pngFolder, gifFolder, mp4Gif):
-		extension = ".gif" if mp4Gif == "gif" else ".mp4"
-		gifOutputFile = gifFolder + "/animation" + str(int(time.time())) + extension
+	# We can only make an MP4 if they width of the images is divisible by 2
+	def ensureWidthDivisibleByTwo(self, mp4Gif):
+		if mp4Gif == "mp4" and self.parentImage.width % 2 != 0:
+			print("Width of images must be divisible by 2 to make an mp4")
+			sys.exit()
+
+	def makeGif(self, pngFolder, gifFolder):
+		gifOutputFile = gifFolder + "/animation" + str(int(time.time())) + ".gif"
 		open(gifOutputFile, "w")
 		os.path.dirname(os.path.realpath(__file__))
 		subprocess.call("convert -duplicate 1,-2-1 -delay 0 -loop 0 " + pngFolder + "*.png " + gifOutputFile, shell=True)
 
+	def makeMp4(self, pngFolder, gifFolder):
+		gifOutputFile = gifFolder + "/animation" + str(int(time.time())) + ".mp4"
+		os.path.dirname(os.path.realpath(__file__))
+		shellCall = 'ffmpeg -r 30 -f image2 -s 1920x1080 -i ' + pngFolder + 'out%05d.png -vcodec libx264 -crf 25 ' + \
+			'-pix_fmt yuv420p -filter_complex "[0]reverse[r];[0][r]concat,loop=5:250,setpts=N/25/TB" ' + gifOutputFile
+		print(shellCall)
+		subprocess.call(shellCall, shell=True)
+
 	def compareImage(self, distanceThreshold, outputFileName, distancesArray, eligiblityFunction):
-		finalImage = np.zeros((self.imageWidth, self.imageHeight, 3), dtype=np.uint8)
+		# finalImage = np.zeros((self.imageWidth, self.imageHeight, 3), dtype=np.uint8)
+		finalImage = np.copy(self.parentImage)
 
 		close = 0
 		total = 0
@@ -130,7 +147,7 @@ def main():
 	matcher = PixelMatcher(childFolder, parentImagePath, customDiffThreshold=customDiffThreshold)
 
 	# matcher.minCompareImage(1000, outputFolder + "outTest.png")
-	matcher.makeCompareGif(outputFolder, loops=500, maxMin="min")
+	matcher.makeCompareGif(outputFolder, loops=300, maxMin="max")
 	# matcher.maxCompareImage(100, "")
 
 if __name__ == "__main__":
