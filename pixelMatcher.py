@@ -9,7 +9,6 @@ import math
 import subprocess
 import time
 import shutil
-# from joblib import Parallel, delayed
 import multiprocessing
 
 
@@ -17,7 +16,6 @@ class PixelMatcher:
 	def __init__(self, childFolder, parentImagePath, customDiffThreshold=None):
 		self.parentImage = Image.open(parentImagePath)
 		self.parentImageData = np.asarray(self.parentImage)
-		print(self.parentImageData)
 
 		self.childImages = [Image.open(join(childFolder, f)) for f in listdir(childFolder) if os.path.isfile(join(childFolder, f))]
 		self.childImageData = [np.asarray(c) for c in self.childImages]
@@ -52,10 +50,8 @@ class PixelMatcher:
 			sys.exit()
 
 
-	def makeCompareGif(self, outputFolder, maxMin="max", loops=300, stepSize=1, gifOutputFolder="./gifs"):
+	def makeCompareGif(self, outputFolder, maxMin="max", loops=300, stepSize=1, gifOutputFolder="./gifs", mp4Gif="mp4"):
 		self.clearOutputFolder(outputFolder)
-
-		num_cores = multiprocessing.cpu_count()
 
 		for i in range(1, loops, stepSize):
 			outputFileName = outputFolder + "/" + maxMin + "out" + format(i, '05') + ".png"
@@ -66,13 +62,14 @@ class PixelMatcher:
 			else:
 				raise ValueError()
 
-		self.makeGif(outputFolder, gifOutputFolder)
+		self.makeGifOrMp4(outputFolder, gifOutputFolder, mp4Gif)
 
-	def makeGif(self, pngFolder, gifFolder):
-		gifOutputFile = gifFolder + "/animation" + str(int(time.time())) + ".gif"
+	def makeGifOrMp4(self, pngFolder, gifFolder, mp4Gif):
+		extension = ".gif" if mp4Gif == "gif" else ".mp4"
+		gifOutputFile = gifFolder + "/animation" + str(int(time.time())) + extension
 		open(gifOutputFile, "w")
 		os.path.dirname(os.path.realpath(__file__))
-		subprocess.call("convert -layers OptimizePlus -coalesce -duplicate 1,-2-1 -delay 0 -loop 0 " + pngFolder + "*.png " + gifOutputFile, shell=True)
+		subprocess.call("convert -duplicate 1,-2-1 -delay 0 -loop 0 " + pngFolder + "*.png " + gifOutputFile, shell=True)
 
 	def compareImage(self, distanceThreshold, outputFileName, distancesArray, eligiblityFunction):
 		finalImage = np.zeros((self.imageWidth, self.imageHeight, 3), dtype=np.uint8)
@@ -92,21 +89,21 @@ class PixelMatcher:
 
 					if eligiblityFunction(dist, distanceThreshold, distancesArray, row, col):
 						distancesArray[row][col] = dist
-						close += 1
+						# close += 1
 						finalImage[row][col] = childPixel
-					total += 1
+					# total += 1
 
-		print("close: " + str(close) + ", total: " + str(total) + " percent: " + str(float(close)/float(total) * 100))
+		# print("close: " + str(close) + ", total: " + str(total) + " percent: " + str(float(close)/float(total) * 100))
 
 		Image.fromarray(finalImage, 'RGB').save(outputFileName)
 
-	def maxElibilityFunction(self, distance, distanceThreshold, maxDistances, row, col):
+	def maxEligibilityFunction(self, distance, distanceThreshold, maxDistances, row, col):
 		return distance < distanceThreshold and distance > maxDistances[row][col]
 
 	def maxCompareImage(self, distanceThreshold, outputFileName):
 		maxDistances = np.zeros((self.imageWidth, self.imageHeight, 1), dtype=np.uint16)
 
-		return self.compareImage(distanceThreshold, outputFileName, maxDistances, self.maxElibilityFunction)
+		return self.compareImage(distanceThreshold, outputFileName, maxDistances, self.maxEligibilityFunction)
 		
 	def minEligibilityFunction(self, distance, distanceThreshold, minDistances, row, col):
 		return distance < distanceThreshold and distance < minDistances[row][col]
@@ -114,7 +111,7 @@ class PixelMatcher:
 	def minCompareImage(self, distanceThreshold, outputFileName):
 		minDistances = np.full((self.imageWidth, self.imageHeight, 1), 9999999, dtype=np.uint16)
 	
-		return self.compareImage(distanceThreshold, outputFileName, minDistances, self.minElibilityFunction)
+		return self.compareImage(distanceThreshold, outputFileName, minDistances, self.minEligibilityFunction)
 
 	def distance(self, t1, t2):
 		return math.sqrt( ((t1[0] - t2[0])**2) + ((t1[1] - t2[1])**2) + ((t1[2] - t2[2])**2) )
@@ -127,13 +124,13 @@ def main():
 		customDiffThreshold = int(sys.argv[1])
 
 	# parentFolder = "./parents/"
-	childFolder = "./abstract/"
+	childFolder = "./testChildren/"
 	outputFolder = "./output/"
-	parentImagePath = "./parents/abstract-colorsdd3a-marilyn-sq.jpg"
+	parentImagePath = "./white.png"
 	matcher = PixelMatcher(childFolder, parentImagePath, customDiffThreshold=customDiffThreshold)
 
 	# matcher.minCompareImage(1000, outputFolder + "outTest.png")
-	matcher.makeCompareGif(outputFolder, loops=20, maxMin="max", )
+	matcher.makeCompareGif(outputFolder, loops=500, maxMin="min")
 	# matcher.maxCompareImage(100, "")
 
 if __name__ == "__main__":
