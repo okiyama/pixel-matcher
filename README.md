@@ -10,6 +10,8 @@ It is corrupting this image:
 ![Parent image](https://github.com/okiyama/pixel-matcher/blob/master/parents/abstract-colorsdd5a-turquoise-sq.jpg)
 
 TODO:  
+ * Fix images having to be square
+ * Facial detection to line up a bunch of portraits
  * Rather than all or nothing on each pixel, have the pixel show the relative frequency through it's alpha value.   
  * Average the pixel values or choose median pixel  
  * Automatically resize child images to match parent    

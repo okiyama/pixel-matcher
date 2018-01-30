@@ -47,15 +47,13 @@ class PixelMatcherRunner:
 			elif maxMin == "min":
 				self.minCompareImage(i, outputFileName)
 			else:
-				raise ValueError()
+				raise ValueError("Invalid argument for maxMin")
 
 	# We can only make an MP4 if they width of the images is divisible by 2
 	def ensureWidthDivisibleByTwo(self):
 		if self.parentImage.width % 2 != 0:
 			print("Width of images must be divisible by 2 to make an mp4")
 			sys.exit()
-
-	
 
 	def compareImage(self, distanceThreshold, outputFileName, distancesArray, eligiblityFunction):
 		# finalImage = np.zeros((self.imageWidth, self.imageHeight, 3), dtype=np.uint8)
@@ -117,3 +115,6 @@ def main(start, stop, outputFolder, childFolder, parentImagePath, maxMin="max", 
 	
 	runner = PixelMatcherRunner(childFolder, parentImagePath)
 	runner.makeCompareImages(outputFolder, start, stop, step=step, maxMin=maxMin)
+
+if __name__ == '__main__':
+	main(0, 100, "./output/", "./abstract - resized/", "./glitch_girl_small.jpg")

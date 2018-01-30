@@ -43,9 +43,7 @@ def main():
 		numCpus -= 1
 
 	segmentSize = args.stop/numCpus
-	#TODO: This seems like it'll fail for values not evenly divisible. Should see if there's a helper for this in multiprocessing
-	#TODO: It did fail to split up 440 correctly
-	subArgs = [(int(x*segmentSize+1), int(x*segmentSize), args.outputFolder, args.childFolder, args.parentImagePath, args.maxMin, args.step) for x in range(numCpus)]
+	subArgs = [(int((x*segmentSize)+1), int((x+1)*segmentSize)+1, args.outputFolder, args.childFolder, args.parentImagePath, args.maxMin, args.step) for x in range(numCpus)]
 	processes = [mp.Process(target=pixelMatcherRunner.main, args=(subArgs[x])) for x in range(numCpus)]
 
 	for p in processes:
@@ -56,7 +54,7 @@ def main():
 
 	print("all done")
 
-	#TODO make arg
+	#TODO make arg for gif output folder
 	makeMp4(args.outputFolder, "./gifs")
 
 if __name__ == '__main__':
