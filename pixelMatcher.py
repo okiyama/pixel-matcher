@@ -5,56 +5,47 @@ import shutil
 import os
 import time
 import subprocess
-
-"""
-	customDiffThreshold = None
-	if len(sys.argv) > 1:
-		customDiffThreshold = int(sys.argv[1])
-
-	# parentFolder = "./parents/"
-	childFolder = "./abstract/"
-	outputFolder = "./output/"
-	parentImagePath = "./parents/tumblr_static_bx9tc24cjhko88owskcowgco8_640_v2.jpg"
-	matcher = PixelMatcher(childFolder, parentImagePath, customDiffThreshold=customDiffThreshold)
-
-	# matcher.minCompareImage(1000, outputFolder + "outTest.png")
-	matcher.makeCompareGif(outputFolder, loops=400, maxMin="min")
-	# matcher.maxCompareImage(100, "")
-	"""
+import sys
+import mp4Maker
 
 def clearOutputFolder(outputFolder):
 	text = input("Clear contents of folder " + outputFolder + " ? ")
 	if(text.lower() == "y"):
-		shutil.rmtree(outputFolder)
+		if(os.path.isdir(outputFolder)):
+			shutil.rmtree(outputFolder)
 		os.makedirs(outputFolder)
 	else:
 		sys.exit()
 
 def makeMp4(pngFolder, gifFolder):
-	gifOutputFile = gifFolder + "/animation" + str(int(time.time())) + ".mp4"
-	os.path.dirname(os.path.realpath(__file__))
-	shellCall = 'ffmpeg -r 30 -f image2 -s 1920x1080 -i ' + pngFolder + 'out%05d.png -vcodec libx264 -crf 25 ' + \
-		'-pix_fmt yuv420p -filter_complex "[0]reverse[r];[0][r]concat,loop=0:250,setpts=N/30/TB" ' + gifOutputFile
-	subprocess.call(shellCall, shell=True)
+	return mp4Maker.makeMp4(pngFolder, gifFolder)
 
 def main():
 	parser = argparse.ArgumentParser()
-	parser.add_argument("start", type=int)
-	parser.add_argument("stop", type=int)
-	parser.add_argument("outputFolder", type=str)
-	parser.add_argument("childFolder", type=str)
-	parser.add_argument("parentImagePath", type=str)
-	parser.add_argument("maxMin", type=str, nargs="?", default="max")
-	parser.add_argument("step", type=int, nargs="?", default=1)
+	parser.add_argument("start", type=int, help="start value for max allowed distance")
+	parser.add_argument("stop", type=int, help="stop value for max allowed distance")
+	parser.add_argument("outputFolder", type=str, help="where to store temporary output files")
+	parser.add_argument("childFolder", type=str, help="what files to iterate through")
+	parser.add_argument("parentImagePath", type=str, help="path to the parent image file")
+	parser.add_argument("-maxMin", type=str, nargs="?", default="max", help="either maximizing or minimizing differences (max/min)")
+	parser.add_argument("-step", type=int, nargs="?", default=1, help="how much to step each frame by, can speed up the gif")
+	parser.add_argument('--limit-cpu-usage', dest='limitCpuUsage', action='store_true', help="flag to use less CPU. Making the computer more usable while the program runs")
 
 	args = parser.parse_args()
+	args.outputFolder = os.path.join(args.outputFolder, '')
+	args.childFolder = os.path.join(args.childFolder, '')
+		
 	# print(args)
 	clearOutputFolder(args.outputFolder)
 
 	numCpus = mp.cpu_count()
-	stop = args.stop
+	if args.limitCpuUsage and numCpus > 1:
+		numCpus -= 1
+
+	segmentSize = args.stop/numCpus
 	#TODO: This seems like it'll fail for values not evenly divisible. Should see if there's a helper for this in multiprocessing
-	subArgs = [(int(x*(stop/numCpus)), int((x*(stop/numCpus)-1) + stop/numCpus), args.outputFolder, args.childFolder, args.parentImagePath, args.maxMin, args.step) for x in range(numCpus)]
+	#TODO: It did fail to split up 440 correctly
+	subArgs = [(int(x*segmentSize+1), int(x*segmentSize), args.outputFolder, args.childFolder, args.parentImagePath, args.maxMin, args.step) for x in range(numCpus)]
 	processes = [mp.Process(target=pixelMatcherRunner.main, args=(subArgs[x])) for x in range(numCpus)]
 
 	for p in processes:
