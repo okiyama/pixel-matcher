@@ -10,11 +10,10 @@ It is corrupting this image:
 ![Parent image](https://github.com/okiyama/pixel-matcher/blob/master/parents/abstract-colorsdd5a-turquoise-sq.jpg)
 
 TODO:  
- * Fix images having to be square
+ * Command line argument for manual image dimensions - or a % of parent image, to do test runs on smaller images
  * Facial detection to line up a bunch of portraits
  * Rather than all or nothing on each pixel, have the pixel show the relative frequency through it's alpha value.   
  * Average the pixel values or choose median pixel  
- * Automatically resize child images to match parent    
  * Use HSV values instead, could give interesting effects from the color wheel    
  * Performance improvements, it's still really slow    
  * For GIF creation, track created files and delete after the run is done. Safer than just deleting the output folder.    
@@ -25,3 +24,5 @@ DONE:
  * Generate gifs of the output with different thresholds    
  * Let closer pixel trump further   
  * Save to .gifv rather than .gif    
+ * Fix images having to be square
+ * Automatically resize child images to match parent    

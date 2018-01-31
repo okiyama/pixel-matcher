@@ -41,6 +41,7 @@ class PixelMatcherRunner:
 		self.ensureWidthDivisibleByTwo()
 
 		for i in range(start, stop, step):
+			print("starting image " + str(i) + " of " + str(stop) + " (" + str(float(i-start)/float(stop-start)*100) + "%)")
 			outputFileName = outputFolder + "/" + "out" + format(i, '05') + ".png"
 			if maxMin == "max":
 				self.maxCompareImage(i, outputFileName)
