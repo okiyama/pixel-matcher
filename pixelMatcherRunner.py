@@ -29,8 +29,8 @@ class PixelMatcherRunner:
 
 			diffMap[childImage.filename] = np.zeros((self.imageWidth, self.imageHeight, 1), dtype=np.float64)
 
-			for row in range(self.imageWidth):
-				for col in range(self.imageHeight):
+			for row in range(self.imageHeight):
+				for col in range(self.imageWidth):
 					pixel = self.parentImageData[row][col]
 					childPixel = childImageData[row][col]
 					diffMap[childImage.filename][row][col] = self.distance(pixel, childPixel)
@@ -64,13 +64,12 @@ class PixelMatcherRunner:
 		for i in range(len(self.childImages)):
 			childImage = self.childImages[i]
 			childImageData = self.childImageData[i]
+			childDiffMap = self.diffMap[childImage.filename]
 
-			childIterator = iter(childImage.getdata())
-
-			for row in range(self.imageWidth):
-				for col in range(self.imageHeight):
+			for row in range(self.imageHeight):
+				for col in range(self.imageWidth):
 					childPixel = childImageData[row][col]
-					dist = self.diffMap[childImage.filename][row][col]
+					dist = childDiffMap[row][col]
 
 					if eligiblityFunction(dist, distanceThreshold, distancesArray, row, col):
 						distancesArray[row][col] = dist
