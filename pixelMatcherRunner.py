@@ -27,7 +27,7 @@ class PixelMatcherRunner:
 			childImage = self.childImages[i]
 			childImageData = self.childImageData[i]
 
-			diffMap[childImage.filename] = np.zeros((self.imageWidth, self.imageHeight, 1), dtype=np.float64)
+			diffMap[childImage.filename] = np.zeros((self.imageHeight, self.imageWidth, 1), dtype=np.float64)
 
 			for row in range(self.imageHeight):
 				for col in range(self.imageWidth):
@@ -86,7 +86,7 @@ class PixelMatcherRunner:
 		return distance < distanceThreshold and distance > maxDistances[row][col]
 
 	def maxCompareImage(self, distanceThreshold, outputFileName):
-		maxDistances = np.zeros((self.imageWidth, self.imageHeight, 1), dtype=np.float64)
+		maxDistances = np.zeros((self.imageHeight, self.imageWidth, 1), dtype=np.float64)
 
 		return self.compareImage(distanceThreshold, outputFileName, maxDistances, self.maxEligibilityFunction)
 		
@@ -94,7 +94,7 @@ class PixelMatcherRunner:
 		return distance < distanceThreshold and distance < minDistances[row][col]
 
 	def minCompareImage(self, distanceThreshold, outputFileName):
-		minDistances = np.full((self.imageWidth, self.imageHeight, 1), 9999999, dtype=np.float64)
+		minDistances = np.full((self.imageHeight, self.imageWidth, 1), 9999999, dtype=np.float64)
 	
 		return self.compareImage(distanceThreshold, outputFileName, minDistances, self.minEligibilityFunction)
 

@@ -6,15 +6,12 @@ import os
 import time
 import sys
 import mp4Maker
+import resizeImages
 
 def clearOutputFolder(outputFolder):
-	text = input("Clear contents of folder " + outputFolder + " ? ")
-	if(text.lower() == "y"):
-		if(os.path.isdir(outputFolder)):
-			shutil.rmtree(outputFolder)
-		os.makedirs(outputFolder)
-	else:
-		sys.exit()
+	if(os.path.isdir(outputFolder)):
+		shutil.rmtree(outputFolder)
+	os.makedirs(outputFolder)
 
 def makeMp4(pngFolder, gifFolder):
 	return mp4Maker.makeMp4(pngFolder, gifFolder)
@@ -37,6 +34,9 @@ def main():
 	# print(args)
 	clearOutputFolder(args.outputFolder)
 
+	print("resizing child images to match parent image")
+	resizeImages.resizeImages(args.parentImagePath, args.childFolder)
+
 	numCpus = mp.cpu_count()
 	if args.limitCpuUsage and numCpus > 1:
 		numCpus -= 1
@@ -45,14 +45,14 @@ def main():
 	subArgs = [(int((x*segmentSize)+1), int((x+1)*segmentSize)+1, args.outputFolder, args.childFolder, args.parentImagePath, args.maxMin, args.step) for x in range(numCpus)]
 	processes = [mp.Process(target=pixelMatcherRunner.main, args=(subArgs[x])) for x in range(numCpus)]
 
+	print("starting child processes")
 	for p in processes:
 		p.start()
 
 	for p in processes:
 		p.join()
 
-	print("all done")
-
+	print("making MP4")
 	#TODO make arg for gif output folder
 	makeMp4(args.outputFolder, "./gifs")
 

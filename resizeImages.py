@@ -7,12 +7,15 @@ from os.path import join
 
 def resizeImages(parentImagePath, childFolder):
 	dimensions = getImageDimensions(parentImagePath)
+	dirBefore = os.path.dirname(os.path.realpath(__file__))
 	
 	childFiles = [f for f in listdir(childFolder) if os.path.isfile(join(childFolder, f))]
 	os.chdir(childFolder)
 	for childFile in childFiles:
 		shellCall = "convert " + childFile + " -resize " + dimensions + "! " + childFile
 		subprocess.call(shellCall, shell=True)
+
+	os.chdir(dirBefore)
 
 
 def getImageDimensions(imagePath):
