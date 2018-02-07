@@ -17,7 +17,8 @@ TODO:
  * Use HSV values instead, could give interesting effects from the color wheel    
  * Performance improvements, it's still really slow    
  * For GIF creation, track created files and delete after the run is done. Safer than just deleting the output folder.    
- * Look into matrix-izing distance calculations. I think I could just hand in the parent and child matrices and get out the diff map. Not a huge deal though, most of time is spent comparing diff map to current pixel values.    
+ * Look into matrix-izing distance calculations. I think I could just hand in the parent and child matrices and get out the diff map. Not a huge deal though, most of time is spent comparing diff map to current pixel values.  
+ * Rather than using child images to corrupt, just move towards the opposite side of 3D RGB space in steps  
 
 DONE:
  * Paralellization would work well. Would need to break up into discrete processes that can be called with command line parameters. This honestly would improve the quality of the program though    
