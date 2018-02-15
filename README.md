@@ -1,13 +1,13 @@
 # pixel-matcher
 Multi file image differ, with the intent of producing art rather than being technically useful. I'll write up how the algorithm works later.
 
-Here's an example. It's the first good output I've gotten.
+Here's an example. 
 
-![First decent output](https://github.com/okiyama/pixel-matcher/blob/master/gifs/animation1511647289.gif)
+![Example](https://gfycat.com/thosealivechinchilla)
 
 It is corrupting this image:
 
-![Parent image](https://github.com/okiyama/pixel-matcher/blob/master/parents/abstract-colorsdd5a-turquoise-sq.jpg)
+![Parent image](https://github.com/okiyama/pixel-matcher/blob/master/glitch_girl_small.jpg)
 
 TODO:  
  * Command line argument for manual image dimensions - or a % of parent image, to do test runs on smaller images
