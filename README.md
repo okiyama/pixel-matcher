@@ -1,9 +1,7 @@
 # pixel-matcher
 Multi file image differ, with the intent of producing art rather than being technically useful. I'll write up how the algorithm works later.
 
-Here's an example. 
-
-![Example](https://gfycat.com/thosealivechinchilla)
+Here's an [example](https://gfycat.com/thosealivechinchilla).
 
 It is corrupting this image:
 
