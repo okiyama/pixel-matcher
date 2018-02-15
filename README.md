@@ -1,7 +1,9 @@
 # pixel-matcher
 Multi file image differ, with the intent of producing art rather than being technically useful. I'll write up how the algorithm works later.
 
-Here's an [example](https://gfycat.com/thosealivechinchilla).
+Here's an example.
+
+![Example](https://github.com/okiyama/pixel-matcher/blob/master/gifs/ezgif.com-optimize.gif).
 
 It is corrupting this image:
 
