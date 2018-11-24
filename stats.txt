@@ -1,0 +1,2 @@
+parallel - 0 to 441, 250x250: 4 min 7 seconds
+non-parallel - 0 to 441, 250x250: 12 min 53 seconds
