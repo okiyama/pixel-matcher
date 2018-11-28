@@ -5,8 +5,11 @@ import os
 from os import listdir
 from os.path import join
 
-def resizeImages(parentImagePath, childFolder):
-	dimensions = getImageDimensions(parentImagePath)
+def resizeImages(parentImagePath, childFolder, imageWidth=None, imageHeight=None):
+	if(imageWidth is not None and imageHeight is not None):
+		dimensions = str(imageWidth) + "x" + str(imageHeight)
+	else:
+		dimensions = getImageDimensions(parentImagePath)
 	dirBefore = os.path.dirname(os.path.realpath(__file__))
 	
 	childFiles = [f for f in listdir(childFolder) if os.path.isfile(join(childFolder, f))]
