@@ -15,12 +15,20 @@ def findMissing(pngFolder):
 		if fileList[i+1] - fileList[i] != 1:
 			print(i+1)
 
+def renameOutput(pngFolder):
+	i = 0
+	for f in listdir(pngFolder):
+		os.rename(os.path.join(pngFolder, f), os.path.join(pngFolder, "out" + format(i, '05') + ".png"))
+		i += 1
+
 def main():
 	parser = argparse.ArgumentParser()
 	parser.add_argument("outputFolder", type=str, help="where the pngs are stored")
 	parser.add_argument('--find-missing', dest='findMissing', action='store_true', help="whether to find missing output images, will not make an mp4")
 	args = parser.parse_args()
 	args.outputFolder = os.path.join(args.outputFolder, '')
+
+	renameOutput(args.outputFolder)
 
 	if(args.findMissing):
 		findMissing(args.outputFolder)

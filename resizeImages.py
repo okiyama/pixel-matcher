@@ -12,7 +12,15 @@ def resizeImages(parentImagePath, childFolder):
 	childFiles = [f for f in listdir(childFolder) if os.path.isfile(join(childFolder, f))]
 	os.chdir(childFolder)
 	for childFile in childFiles:
-		shellCall = "convert " + childFile + " -resize " + dimensions + "! " + childFile
+		#dear future self: welcome back! You can thank me later. So I think you wrote these directories to work for Linux
+		#and I tried running in Cygwin and Git Bash but it barfed. Anyways, these are windows paths now.
+		#You may have to switch them back to Linux, maybe check git history?
+		#Also, it is 2020. Trump refuses to concede and is attempting a coup. I hope things are better on the other side of this pandemic.
+		#At times, it feels there will be no other side.
+		#I certainly won't view America the same way ever again.
+		shellCall = "convert \".\\" + childFile + "\" -resize " + dimensions + "! \".\\" + childFile + "\""
+		#print(shellCall)
+		#print(os.getcwd())
 		subprocess.call(shellCall, shell=True)
 
 	os.chdir(dirBefore)

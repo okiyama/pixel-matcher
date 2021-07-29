@@ -18,13 +18,13 @@ def makeMp4(pngFolder, gifFolder):
 
 def main():
 	parser = argparse.ArgumentParser()
-	parser.add_argument("start", type=int, help="start value for max allowed distance")
-	parser.add_argument("stop", type=int, help="stop value for max allowed distance")
+	parser.add_argument("start", type=float, help="start value for max allowed distance")
+	parser.add_argument("stop", type=float, help="stop value for max allowed distance")
 	parser.add_argument("outputFolder", type=str, help="where to store temporary output files")
 	parser.add_argument("childFolder", type=str, help="what files to iterate through")
 	parser.add_argument("parentImagePath", type=str, help="path to the parent image file")
 	parser.add_argument("-maxMin", type=str, nargs="?", default="max", help="either maximizing or minimizing differences (max/min)")
-	parser.add_argument("-step", type=int, nargs="?", default=1, help="how much to step each frame by, can speed up the gif")
+	parser.add_argument("-step", type=float, nargs="?", default=0.01, help="how much to step each frame by, can speed up the gif")
 	parser.add_argument('--limit-cpu-usage', dest='limitCpuUsage', action='store_true', help="flag to use less CPU. Making the computer more usable while the program runs")
 
 	args = parser.parse_args()
@@ -42,7 +42,10 @@ def main():
 		numCpus -= 1
 
 	segmentSize = args.stop/numCpus
-	subArgs = [(int((x*segmentSize)+1), int((x+1)*segmentSize)+1, args.outputFolder, args.childFolder, args.parentImagePath, args.maxMin, args.step) for x in range(numCpus)]
+	print("seg " + str(segmentSize))
+	#This segmenting doesn't work so good with floats
+	subArgs = [(int((x*segmentSize)), int((x+1)*segmentSize), args.outputFolder, args.childFolder, args.parentImagePath, args.maxMin, args.step) for x in range(numCpus)]
+	print(subArgs)
 	processes = [mp.Process(target=pixelMatcherRunner.main, args=(subArgs[x])) for x in range(numCpus)]
 
 	print("starting child processes")
