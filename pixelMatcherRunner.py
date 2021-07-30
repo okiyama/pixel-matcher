@@ -11,19 +11,27 @@ import argparse
 
 class PixelMatcherRunner:
 	def __init__(self, childFolder, parentImagePath):
+		print("opening parent image")
 		self.parentImage = Image.open(parentImagePath)
 		self.parentImageData = np.asarray(self.parentImage)
+		print("parent image opened")
 
+		print("opening child images")
 		self.childImages = [Image.open(join(childFolder, f)) for f in listdir(childFolder) if os.path.isfile(join(childFolder, f))]
 		self.childImageData = [np.asarray(c) for c in self.childImages]
+		print("child images opened")
 
 		self.imageWidth = self.parentImage.size[0]
 		self.imageHeight = self.parentImage.size[1]
+		print("initing diff map")
 		self.diffMap = self.initDiffMap()
+		print("diff map inited")
 
 	def initDiffMap(self):
 		diffMap = {}
-		for i in range(len(self.childImages)):
+		numChildImages = len(self.childImages)
+		for i in range(numChildImages):
+			print("inited diff " + str(i) + " out of " + str(numChildImages) + " (" + str(float(i)/float(numChildImages)) + "%)")
 			childImage = self.childImages[i]
 			childImageData = self.childImageData[i]
 
