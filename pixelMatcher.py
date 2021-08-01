@@ -43,8 +43,11 @@ def main():
 
 	#numCpus = 1
 
+	#TODO fix hardcoding
+	segments = [[0, 220], [220, 330], [330, 385], [385, 441]]
+
 	segmentSize = args.stop/numCpus
-	subArgs = [(int((x*segmentSize)+1), int((x+1)*segmentSize)+1, args.outputFolder, args.childFolder, args.parentImagePath, args.maxMin, args.step) for x in range(numCpus)]
+	subArgs = [(x[0], x[1], args.outputFolder, args.childFolder, args.parentImagePath, args.maxMin, args.step) for x in segments]
 	processes = [mp.Process(target=pixelMatcherRunner.main, args=(subArgs[x])) for x in range(numCpus)]
 
 	print("starting child processes")

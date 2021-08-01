@@ -8,7 +8,7 @@ import cProfile
 import math
 import argparse
 
-
+#TODO either fix min or drop support
 class PixelMatcherRunner:
 	def __init__(self, childFolder, parentImagePath):
 		self.parentImage = Image.open(parentImagePath)
@@ -44,6 +44,7 @@ class PixelMatcherRunner:
 						#print(diffMap[row][col])
 
 		#sort diffMap
+		#TODO sort opposite for min
 		for row in range(self.imageHeight):
 				for col in range(self.imageWidth):
 					#print(diffMap[row][col])
