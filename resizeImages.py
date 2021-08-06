@@ -5,6 +5,7 @@ import os
 from os import listdir
 from os.path import join
 
+#TODO only resize if dimensions differ
 def resizeImages(parentImagePath, childFolder):
 	dimensions = getImageDimensions(parentImagePath)
 	dirBefore = os.path.dirname(os.path.realpath(__file__))
