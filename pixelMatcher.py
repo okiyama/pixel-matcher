@@ -1,5 +1,6 @@
 import argparse
 import pixelMatcherRunner
+import pixelMatcherGpu
 import multiprocessing as mp
 import shutil
 import os
@@ -49,7 +50,7 @@ def main():
 	segmentSize = args.stop/numCpus
 	subArgs = [(int((x*segmentSize)+1), int((x+1)*segmentSize)+1, args.outputFolder, args.childFolder, args.parentImagePath, args.maxMin, args.step) for x in range(numCpus)]
 	
-	processes = [mp.Process(target=pixelMatcherRunner.main, args=(subArgs[x])) for x in range(numCpus)]
+	processes = [mp.Process(target=pixelMatcherGpu.main, args=(subArgs[x])) for x in range(numCpus)]
 
 	print("starting child processes")
 	now = time.time()
