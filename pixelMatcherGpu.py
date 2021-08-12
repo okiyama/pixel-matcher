@@ -12,18 +12,21 @@ import time
 #TODO either fix min or drop support
 class PixelMatcherGpu:
 	def __init__(self, childFolder, parentImagePath):
+		self.initParentData(parentImagePath)
+
+		self.childImages = [Image.open(join(childFolder, f)).convert("RGB") for f in listdir(childFolder) if os.path.isfile(join(childFolder, f))]
+		self.childR, self.childG, self.childB = self.initChildImageData()
+
+	def initParentData(self, parentImagePath):
 		self.parentImage = Image.open(parentImagePath)
 		self.parentImageData = cp.asarray(self.parentImage)
 		self.imageWidth = self.parentImage.size[0]
 		self.imageHeight = self.parentImage.size[1]
 		self.parentR, self.parentG, self.parentB = self.flattenImageData(self.parentImageData)
 
-		self.childImages = [Image.open(join(childFolder, f)).convert("RGB") for f in listdir(childFolder) if os.path.isfile(join(childFolder, f))]
-		self.childR, self.childG, self.childB = self.initChildImageData()
-
 	def initChildImageData(self):
-		rawChildImageData = [cp.asarray(c) for c in self.childImages]
-		childDataFlattened = [self.flattenImageData(imageData) for imageData in rawChildImageData]
+		self.rawChildImageData = [cp.asarray(c) for c in self.childImages]
+		childDataFlattened = [self.flattenImageData(imageData) for imageData in self.rawChildImageData]
 		childR = [imageData[0] for imageData in childDataFlattened]
 		childG = [imageData[1] for imageData in childDataFlattened]
 		childB = [imageData[2] for imageData in childDataFlattened]
@@ -47,7 +50,7 @@ class PixelMatcherGpu:
 
 		for i in range(start, stop, step):
 			print("starting image " + str(i) + " of " + str(stop) + " (" + str(float(i-start)/float(stop-start)*100) + "%)")
-			outputFileName = outputFolder + "/" + "out" + format(i, '05') + ".png"
+			outputFileName = outputFolder + "/" + "out" + format(int(i/step), '05') + ".png"
 			if maxMin == "max":
 				self.maxCompareImage(i, outputFileName)
 			elif maxMin == "min":
@@ -62,9 +65,6 @@ class PixelMatcherGpu:
 			sys.exit()
 
 	def compareImage(self, distanceThreshold, outputFileName):
-		# finalImage = np.zeros((self.imageWidth, self.imageHeight, 3), dtype=np.uint8)
-		#finalImage = cp.copy(self.parentImage)
-
 		inputArgs = "uint16 distanceThreshold, uint8 parentR, uint8 parentG, uint8 parentB, "
 		for child in range(0, len(self.childImages)):
 			inputArgs += "uint8 childR" + str(child) + ", "
@@ -75,24 +75,40 @@ class PixelMatcherGpu:
 			if(child != len(self.childImages) - 1):
 				inputArgs += ", "
 
+		outputArgs = 'uint8 finalImageR, uint8 finalImageG, uint8 finalImageB'
+
 		kernelFunction = ""
 		for child in range(0, len(self.childImages)):
-			kernelFunction += "float distance{child} = sqrtf(powf(parentR - childR{child}, 2) + powf(parentG - childG{child}, 2) + powf(parentB - childB{child}, 2));\n".format(child=child)
-		kernelFunction += "float distanceToUse = -1.0;\n"
-
+			kernelFunction += """
+				int subR{child} = parentR - childR{child};
+				int subG{child} = parentG - childG{child};
+				int subB{child} = parentB - childB{child};
+				if(subR{child} < 0) subR{child} = subR{child} + 256;
+				if(subG{child} < 0) subG{child} = subG{child} + 256;
+				if(subB{child} < 0) subB{child} = subB{child} + 256;
+				unsigned long distanceR{child} = subR{child} * subR{child};
+				unsigned long distanceG{child} = subG{child} * subG{child};
+				unsigned long distanceB{child} = subB{child} * subB{child};
+				unsigned long preSqrtDist{child} = distanceR{child} + distanceG{child} + distanceB{child};
+				float distance{child} = sqrtf(preSqrtDist{child});\n
+			""".format(child=child)
+			#kernelFunction += "float distance{child} = sqrtf(((parentR - childR{child}) * (parentR - childR{child})) + ((parentG - childG{child}) * (parentG - childG{child})) + ((parentB - childB{child}) * (parentB - childB{child})));\n".format(child=child)
+		kernelFunction += "float maxDistance = 0.0;\n"
+		kernelFunction += "bool useParent = true;\n"
 
 		for child in range(0, len(self.childImages)):
 			kernelFunction += """
-				if(distance{child} < distanceThreshold && distance{child} > distanceToUse) {{
-					distanceToUse = distance{child};
+				if(distance{child} < distanceThreshold && distance{child} > maxDistance) {{
+					maxDistance = distance{child};
 					finalImageR = childR{child}; 
 					finalImageG = childG{child};
 					finalImageB = childB{child};
+					useParent = false;
 				}}\n
 			""".format(child=child)
 
 		kernelFunction += """
-			if(distanceToUse == -1.0) {{
+			if(useParent == true) {{
 				finalImageR = parentR; 
 				finalImageG = parentG;
 				finalImageB = parentB;
@@ -101,7 +117,7 @@ class PixelMatcherGpu:
 
 		pixel_matcher = cp.ElementwiseKernel(
 			inputArgs,
-			'uint8 finalImageR, uint8 finalImageG, uint8 finalImageB',
+			outputArgs,
 			kernelFunction,
 			'pixel_matcher')
 
