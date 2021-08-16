@@ -9,11 +9,14 @@ import time
 import sys
 import mp4Maker
 import resizeImages
+import time
 
-def clearOutputFolder(outputFolder):
-	if(os.path.isdir(outputFolder)):
-		shutil.rmtree(outputFolder)
-	os.makedirs(outputFolder)
+def createOutputFolder(outputFolder):
+	if(not os.path.isdir(outputFolder)):
+		os.makedirs(outputFolder)
+	actualOutputFolder = outputFolder + "/" + time.strftime("%Y-%m-%d_%H-%M-%S", time.localtime())
+	os.makedirs(actualOutputFolder)
+	return actualOutputFolder
 
 def makeMp4(pngFolder, gifFolder):
 	return mp4Maker.makeMp4(pngFolder, gifFolder)
@@ -28,17 +31,21 @@ def main():
 	parser.add_argument("-maxMin", type=str, nargs="?", default="max", help="either maximizing or minimizing differences (max/min)")
 	parser.add_argument("-step", type=int, nargs="?", default=1, help="how much to step each frame by, can speed up the gif")
 	parser.add_argument('--limit-cpu-usage', dest='limitCpuUsage', action='store_true', help="flag to use less CPU. Making the computer more usable while the program runs")
+	parser.add_argument('--volume-intensity', dest='columeIntensity', action='store_true', help="flag to have the corruption be proportional to the volume of the frame")
 
 	args = parser.parse_args()
 	args.outputFolder = os.path.join(args.outputFolder, '')
 	args.childFolder = os.path.join(args.childFolder, '')
 		
 	# print(args)
-	clearOutputFolder(args.outputFolder)
+	outputFolder = createOutputFolder(args.outputFolder)
 
 	numCpus = mp.cpu_count()
 	if args.limitCpuUsage and numCpus > 1:
 		numCpus -= 1
+
+	print("resizing child images to match parent image")
+	childFolder = resizeImages.resizeImages(args.parentImagePath, args.childFolder)
 
 	processes = []
 	parentImageDir = os.path.join(args.parentImagePath, '')
@@ -50,14 +57,15 @@ def main():
 			if os.path.isfile(thisParentImagePath):
 				parentImagePaths.append(thisParentImagePath)
 		segments = np.array_split(range(args.start, args.stop, args.step), len(parentImagePaths))
-		subArgs = [(segments[x][0], segments[x][-1]+args.step, args.outputFolder, args.childFolder, parentImagePaths[x], args.maxMin, args.step) for x in range(len(parentImagePaths))]
+		subArgs = []
+		startFrame = 0
+		for x in range(len(parentImagePaths)):
+			subArgs.append((segments[x], outputFolder, childFolder, parentImagePaths[x], args.maxMin, startFrame))
+			startFrame += len(segments[x]) - 1
 		processes = [mp.Process(target=pixelMatcherGpu.main, args=(subArgs[x])) for x in range(len(parentImagePaths))]
 	else:
-		print("resizing child images to match parent image")
-		resizeImages.resizeImages(args.parentImagePath, args.childFolder)
-
 		segments = np.array_split(range(args.start, args.stop, args.step), numCpus)
-		subArgs = [(segments[x][0], segments[x][-1]+args.step, args.outputFolder, args.childFolder, args.parentImagePath, args.maxMin, args.step) for x in range(numCpus)]
+		subArgs = [(segments[x], outputFolder, childFolder, args.parentImagePath, args.maxMin, segments[x][0]) for x in range(numCpus)]
 		processes = [mp.Process(target=pixelMatcherGpu.main, args=(subArgs[x])) for x in range(numCpus)]
 	
 	print("starting child processes")
@@ -79,7 +87,7 @@ def main():
 
 	print("making MP4")
 	#TODO make arg for gif output folder
-	makeMp4(args.outputFolder, "./gifs")
+	makeMp4(outputFolder, "./gifs")
 
 if __name__ == '__main__':
 	main()

@@ -45,18 +45,20 @@ class PixelMatcherGpu:
 		B = imageDataB.reshape((self.imageHeight,self.imageWidth))
 		return cp.stack((R, G, B), axis=2)
 
-	def makeCompareImages(self, outputFolder, start, stop, step=1, maxMin="max"):
+	def makeCompareImages(self, outputFolder, thresholdsArray, maxMin="max", firstFrameNumber=0):
 		self.ensureWidthDivisibleByTwo()
 
-		for i in range(start, stop, step):
-			print("starting image " + str(i) + " of " + str(stop) + " (" + str(float(i-start)/float(stop-start)*100) + "%)")
-			outputFileName = outputFolder + "/" + "out" + format(int(i/step), '05') + ".png"
+		framesRendered = 0
+		for i in thresholdsArray:
+			print("starting image " + str(framesRendered) + " of " + str(len(thresholdsArray)) + " (" + str(float(framesRendered)/float(len(thresholdsArray))*100) + "%)")
+			outputFileName = outputFolder + "/" + "out" + format(firstFrameNumber + framesRendered, '05') + ".png"
 			if maxMin == "max":
 				self.maxCompareImage(i, outputFileName)
 			elif maxMin == "min":
 				self.minCompareImage(i, outputFileName)
 			else:
 				raise ValueError("Invalid argument for maxMin")
+			framesRendered += 1
 
 	# We can only make an MP4 if they width of the images is divisible by 2
 	def ensureWidthDivisibleByTwo(self):
@@ -139,21 +141,18 @@ class PixelMatcherGpu:
 
 
 #Note: 441.673 is the max distance between two pixels
-def main(start, stop, outputFolder, childFolder, parentImagePath, maxMin="max", step=1):
-	# print("start" + str(start) + str(type(start)))
-	# print("stop" + str(stop) + str(type(stop)))
+def main(thresholdsArray, outputFolder, childFolder, parentImagePath, maxMin="max", firstFrameNumber=0):
 	# print("outputFolder" + str(outputFolder) + str(type(outputFolder)))
 	# print("childFolder" + str(childFolder) + str(type(childFolder)))
 	# print("parentImagePath" + str(parentImagePath) + str(type(parentImagePath)))
 	# print("maxMin" + str(maxMin) + str(type(maxMin)))
-	# print("step" + str(step) + str(type(step)))
 	
 	now = time.time()
 	runner = PixelMatcherGpu(childFolder, parentImagePath)
-	runner.makeCompareImages(outputFolder, start, stop, step=step, maxMin=maxMin)
+	runner.makeCompareImages(outputFolder, thresholdsArray, maxMin=maxMin, firstFrameNumber=firstFrameNumber)
 	later = time.time()
-	print("Took this child " + str(later - now) + " seconds to do " + str(stop - start) + " from " + str(start) + " to " + str(stop))
+	print("Took this child " + str(later - now) + " seconds to do " + str(len(thresholdsArray)))
 
 if __name__ == '__main__':
 	#main(0, 441, "./output/", "./r_test/", "./100_r.png")
-	main(0, 441, "./output/", "./abstract/", "./glitch_girl_small.jpg")
+	main(range(442), "./output/", "./abstract/", "./glitch_girl_small.jpg")

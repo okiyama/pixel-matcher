@@ -4,20 +4,29 @@ from PIL import Image
 import os
 from os import listdir
 from os.path import join
+import shutil
 
-#TODO only resize if dimensions differ
-#TODO resize into a folder with the dimensions used, and only if doesn't exist already
 def resizeImages(parentImagePath, childFolder):
+	if(os.path.isdir(parentImagePath)):
+		parentImagePath = parentImagePath + "/" + listdir(parentImagePath)[0]
 	dimensions = getImageDimensions(parentImagePath)
 	dirBefore = os.path.dirname(os.path.realpath(__file__))
-	
-	childFiles = [f for f in listdir(childFolder) if os.path.isfile(join(childFolder, f))]
-	os.chdir(childFolder)
-	for childFile in childFiles:
-		shellCall = "convert " + childFile + " -resize " + dimensions + "! " + childFile
-		subprocess.call(shellCall, shell=True)
+
+	childFolder = childFolder[0:-1] if childFolder[-1] == "\\" else childFolder
+	targetChildDir = childFolder + "_" + dimensions
+	if(not os.path.isdir(targetChildDir)):
+		shutil.copytree(childFolder, targetChildDir)
+		os.chdir(targetChildDir)
+
+		for childFile in listdir("."):
+			if os.path.isfile(childFile):
+				shellCall = "convert " + childFile + " -resize " + dimensions + "! " + childFile
+				subprocess.call(shellCall, shell=True)
+	else:
+		print("Target child folder: " + targetChildDir + " already exists, skipping resize.")
 
 	os.chdir(dirBefore)
+	return targetChildDir
 
 
 def getImageDimensions(imagePath):
