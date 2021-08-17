@@ -27,7 +27,7 @@ def main():
 	parser.add_argument("stop", type=int, help="stop value for max allowed distance")
 	parser.add_argument("outputFolder", type=str, help="where to store temporary output files")
 	parser.add_argument("childFolder", type=str, help="what files to iterate through")
-	parser.add_argument("parentImagePath", type=str, help="path to the parent image file, if a folder then each image in the folder will be used for one frame")
+	parser.add_argument("parentImagePath", type=str, help="path to the parent image file, if a folder then each image in the folder will be used for one frame, if an .mp4 it will be split into frames then that folder will be used")
 	parser.add_argument("-maxMin", type=str, nargs="?", default="max", help="either maximizing or minimizing differences (max/min)")
 	parser.add_argument("-step", type=int, nargs="?", default=1, help="how much to step each frame by, can speed up the gif")
 	parser.add_argument('--limit-cpu-usage', dest='limitCpuUsage', action='store_true', help="flag to use less CPU. Making the computer more usable while the program runs")
@@ -44,29 +44,34 @@ def main():
 	if args.limitCpuUsage and numCpus > 1:
 		numCpus -= 1
 
-	print("resizing child images to match parent image")
-	childFolder = resizeImages.resizeImages(args.parentImagePath, args.childFolder)
 
 	processes = []
-	parentImageDir = os.path.join(args.parentImagePath, '')
+	if(os.path.isfile(args.parentImagePath) and args.parentImagePath.lower().endswith(".mp4")):
+		print("Provided MP4 as parent, splitting into frames then using that parent as directory")
+		parentImageDir = mp4Maker.splitMp4IntoFrames(args.parentImagePath, args.outputFolder)
+	else:
+		parentImageDir = os.path.join(args.parentImagePath, '')
+	
+	print("resizing child images to match parent image")
+	childFolder = resizeImages.resizeImages(str(parentImageDir), args.childFolder)
+
 	if(os.path.isdir(parentImageDir)):
-		print("Parent was folder")
+		print("Parent was folder: " + str(parentImageDir))
 		parentImagePaths = []
 		for f in os.listdir(parentImageDir):
-			thisParentImagePath = os.path.join(args.parentImagePath, f)
+			thisParentImagePath = os.path.join(parentImageDir, f)
 			if os.path.isfile(thisParentImagePath):
 				parentImagePaths.append(thisParentImagePath)
-		segments = np.array_split(range(args.start, args.stop, args.step), len(parentImagePaths))
+
+		segments = np.linspace(args.start, args.stop, len(parentImagePaths))
 		subArgs = []
-		startFrame = 0
 		for x in range(len(parentImagePaths)):
-			subArgs.append((segments[x], outputFolder, childFolder, parentImagePaths[x], args.maxMin, startFrame))
-			startFrame += len(segments[x]) - 1
+			subArgs.append(([segments[x]], outputFolder, childFolder, parentImagePaths[x], args.maxMin, x))
 		processes = [mp.Process(target=pixelMatcherGpu.main, args=(subArgs[x])) for x in range(len(parentImagePaths))]
 	else:
 		segments = np.array_split(range(args.start, args.stop, args.step), numCpus)
 		subArgs = [(segments[x], outputFolder, childFolder, args.parentImagePath, args.maxMin, segments[x][0]) for x in range(numCpus)]
-		processes = [mp.Process(target=pixelMatcherGpu.main, args=(subArgs[x])) for x in range(numCpus)]
+		processes = [mp.Process(target=pixelMatcherGpu.main, args=(subArgs[x])) for x in range(len(segments))]
 	
 	print("starting child processes")
 	now = time.time()

@@ -50,7 +50,7 @@ class PixelMatcherGpu:
 
 		framesRendered = 0
 		for i in thresholdsArray:
-			print("starting image " + str(framesRendered) + " of " + str(len(thresholdsArray)) + " (" + str(float(framesRendered)/float(len(thresholdsArray))*100) + "%)")
+			print("starting image " + str(framesRendered + 1) + " of " + str(len(thresholdsArray)) + " (" + str(float(framesRendered)/float(len(thresholdsArray))*100) + "%)")
 			outputFileName = outputFolder + "/" + "out" + format(firstFrameNumber + framesRendered, '05') + ".png"
 			if maxMin == "max":
 				self.maxCompareImage(i, outputFileName)
@@ -67,7 +67,7 @@ class PixelMatcherGpu:
 			sys.exit()
 
 	def compareImage(self, distanceThreshold, outputFileName):
-		inputArgs = "uint16 distanceThreshold, uint8 parentR, uint8 parentG, uint8 parentB, "
+		inputArgs = "float32 distanceThreshold, uint8 parentR, uint8 parentG, uint8 parentB, "
 		for child in range(0, len(self.childImages)):
 			inputArgs += "uint8 childR" + str(child) + ", "
 		for child in range(0, len(self.childImages)):
