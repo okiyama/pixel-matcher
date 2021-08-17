@@ -10,6 +10,7 @@ import sys
 import mp4Maker
 import resizeImages
 import time
+from moviepy.editor import VideoFileClip
 
 def createOutputFolder(outputFolder):
 	if(not os.path.isdir(outputFolder)):
@@ -31,11 +32,16 @@ def main():
 	parser.add_argument("-maxMin", type=str, nargs="?", default="max", help="either maximizing or minimizing differences (max/min)")
 	parser.add_argument("-step", type=int, nargs="?", default=1, help="how much to step each frame by, can speed up the gif")
 	parser.add_argument('--limit-cpu-usage', dest='limitCpuUsage', action='store_true', help="flag to use less CPU. Making the computer more usable while the program runs")
-	parser.add_argument('--volume-intensity', dest='columeIntensity', action='store_true', help="flag to have the corruption be proportional to the volume of the frame")
+	parser.add_argument('--volume-intensity', dest='volumeIntensity', action='store_true', help="flag to have the corruption be proportional to the volume of the frame")
 
 	args = parser.parse_args()
 	args.outputFolder = os.path.join(args.outputFolder, '')
 	args.childFolder = os.path.join(args.childFolder, '')
+
+	isMp4 = os.path.isfile(args.parentImagePath) and args.parentImagePath.lower().endswith(".mp4")
+	if(args.volumeIntensity and not isMp4):
+		print("Must pass MP4 as parent when using volume intensity flag")
+		exit()
 		
 	# print(args)
 	outputFolder = createOutputFolder(args.outputFolder)
@@ -46,14 +52,15 @@ def main():
 
 
 	processes = []
-	if(os.path.isfile(args.parentImagePath) and args.parentImagePath.lower().endswith(".mp4")):
+	if(isMp4):
 		print("Provided MP4 as parent, splitting into frames then using that parent as directory")
 		parentImageDir = mp4Maker.splitMp4IntoFrames(args.parentImagePath, args.outputFolder)
 	else:
 		parentImageDir = os.path.join(args.parentImagePath, '')
-	
+
 	print("resizing child images to match parent image")
 	childFolder = resizeImages.resizeImages(str(parentImageDir), args.childFolder)
+
 
 	if(os.path.isdir(parentImageDir)):
 		print("Parent was folder: " + str(parentImageDir))
@@ -63,7 +70,20 @@ def main():
 			if os.path.isfile(thisParentImagePath):
 				parentImagePaths.append(thisParentImagePath)
 
-		segments = np.linspace(args.start, args.stop, len(parentImagePaths))
+		if args.volumeIntensity:
+			print("Making corruption proportional to volume")
+			clip = VideoFileClip(args.parentImagePath)
+			frameTimings = np.linspace(0, clip.audio.duration, clip.reader.nframes)
+
+			#source: https://stackoverflow.com/questions/28119082/how-can-i-get-the-volume-of-sound-of-a-video-in-python-using-moviepy
+			cut = lambda i: clip.audio.subclip(frameTimings[i],frameTimings[i+1]).to_soundarray()
+			volume = lambda array: np.sqrt(((1.0*array)**2).mean())
+			volumes = [volume(cut(i)) for i in range(len(frameTimings) - 1)]
+			maxval = np.max(volumes)
+			minval = np.min(volumes)
+			segments = np.array([((args.stop - args.start) * ((x - minval) / (maxval - minval))) + args.start for x in volumes])
+		else:
+			segments = np.linspace(args.start, args.stop, len(parentImagePaths))
 		subArgs = []
 		for x in range(len(parentImagePaths)):
 			subArgs.append(([segments[x]], outputFolder, childFolder, parentImagePaths[x], args.maxMin, x))
@@ -76,6 +96,7 @@ def main():
 	print("starting child processes")
 	now = time.time()
 	numLaunched = 0
+	#TODO output num launched as percent each batch
 	while numLaunched < len(processes):
 		for i in range(numCpus):
 			if(numLaunched + i < len(processes)):

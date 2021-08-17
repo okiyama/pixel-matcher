@@ -2,7 +2,10 @@ import argparse, time, os, subprocess
 from os import listdir
 
 
-def makeMp4(pngFolder, gifFolder, loopGif=True):
+#WARNING: loopGif=True will roughly double the memory usage and possibly cause memory allocation errors. It also makes the MP4 creation take longer.
+#You're probably better off doing that in post if you want it.
+#TODO pass in framerate and MP4 to grab audio stream from
+def makeMp4(pngFolder, gifFolder, loopGif=False):
 	gifOutputFile = gifFolder + "/animation" + str(int(time.time())) + ".mp4"
 	os.path.dirname(os.path.realpath(__file__))
 	shellCall = 'ffmpeg -r 24000/1001 -i ' + pngFolder + '/out%05d.png -vcodec libx265 '
@@ -42,7 +45,7 @@ def main():
 	if(args.findMissing):
 		findMissing(args.outputFolder)
 	else:
-		makeMp4(args.outputFolder, "./gifs")
+		makeMp4(args.outputFolder, "./gifs", loopGif=False)
 
 if __name__ == '__main__':
 	main()
