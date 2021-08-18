@@ -1,0 +1,12 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Pixel Runner",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/pixelMatcherRunner.py",
+            "console": "integratedTerminal"
+        }
+    ]
+}
