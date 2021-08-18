@@ -5,15 +5,25 @@ from os import listdir
 #WARNING: loopGif=True will roughly double the memory usage and possibly cause memory allocation errors. It also makes the MP4 creation take longer.
 #You're probably better off doing that in post if you want it.
 #TODO pass in framerate and MP4 to grab audio stream from
-def makeMp4(pngFolder, gifFolder, loopGif=False):
+def makeMp4(pngFolder, gifFolder, loopGif=False, fps=None, audioFrom=None):
 	gifOutputFile = gifFolder + "/animation" + str(int(time.time())) + ".mp4"
 	os.path.dirname(os.path.realpath(__file__))
-	shellCall = 'ffmpeg -r 24000/1001 -i ' + pngFolder + '/out%05d.png -vcodec libx265 '
+	shellCall = 'ffmpeg -r '
+	if fps is not None:
+		shellCall += str(fps)
+	else:
+		shellCall += '24000/1001'
+	shellCall += ' -i ' + pngFolder + '/out%05d.png'
+	if audioFrom is not None:
+		shellCall += ' -i ' + str(audioFrom) + ' -c:v copy -map 0:v:0 -map 1:a:0'
+	shellCall += ' -vcodec libx265 '
 	if(loopGif):
-		shellCall += '-filter_complex "[0]reverse[r];[0][r]concat,loop=0:250,setpts=N/30/TB" '
+		shellCall += ' -filter_complex "[0]reverse[r];[0][r]concat,loop=0:250,setpts=N/30/TB" '
 	shellCall += gifOutputFile
 	print(shellCall)
 	subprocess.call(shellCall, shell=True)
+
+	return gifOutputFile
 
 def findMissing(pngFolder):
 	fileList = [int(f[3:8]) for f in listdir(pngFolder)]
